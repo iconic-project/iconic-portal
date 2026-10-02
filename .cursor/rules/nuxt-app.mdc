@@ -8,7 +8,7 @@ alwaysApply: true
 
 ## Stack
 Nuxt 4 (`app/` directory), Nuxt UI v4, Tailwind CSS v4, TypeScript strict, pnpm.
-Every app **extends the `iconic-ui` layer**, which owns the design tokens, the Nuxt UI theme, fonts, shared components (`Ank*`), `useApi()`, `useMoney()`, `useDates()` and the generated API types. Never redefine tokens or fonts inside an app — change the layer instead. The layer's Nuxt UI overrides match the back office (the panel; RMS and CRM prototypes share identical CSS). **The engine differs** (page background `--forest`, larger buttons: 11px / .24em / 15px 32px, easing curves), so iconic-engine adds its own overrides in its `app.config.ts`, which Nuxt merges over the layer's.
+Every app **extends the `iconic-ui` layer**, which owns the design tokens, the Nuxt UI theme, fonts, shared components (`Ank*`), `useApi()`, `useMoney()`, `useDates()` and the generated API types. Never redefine tokens or fonts inside an app — change the layer instead. The layer's Nuxt UI overrides match the back office (the panel; RMS and CRM prototypes share identical CSS). **The engine uses the same compact controls as the layer** (8px radius, 13px type, 8×16 padding). Cobalt is reserved for primary actions. iconic-engine may still override a control in its `app.config.ts`, which Nuxt merges over the layer's.
 
 | App | Rendering | Users |
 |---|---|---|
