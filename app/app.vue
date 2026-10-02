@@ -9,8 +9,8 @@ useHead({
 })
 
 useSeoMeta({
-  title: 'HILO',
-  description: 'HILO agent portal'
+  title: 'Iconic',
+  description: 'Iconic agent portal'
 })
 </script>
 
