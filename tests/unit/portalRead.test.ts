@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { ApiError } from '#anakata-ui/app/composables/useApi'
+import { ApiError } from '#iconic-ui/app/composables/useApi'
 import { canRequestDeparture } from '../../app/utils/availabilityLabel'
 import { availabilityPath, monthToRange } from '../../app/utils/availabilityQuery'
 import { portalPageMessages } from '../../app/utils/authError'

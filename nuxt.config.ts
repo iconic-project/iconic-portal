@@ -1,19 +1,25 @@
 import { existsSync } from 'node:fs'
 import { resolve } from 'node:path'
 
+function isUiLayer(cwd: string): boolean {
+  return existsSync(resolve(cwd, 'app/types/engine.ts'))
+}
+
 const localUi = resolve(import.meta.dirname, '../iconic-ui')
 const uiLayer = existsSync(localUi)
   ? '../iconic-ui'
-  : 'github:anakata-project/anakata-ui#v0.17.1'
+  : 'github:iconic-project/iconic-ui#dev'
 
 export default defineNuxtConfig({
   extends: [uiLayer],
 
   modules: [
     (_options, nuxt) => {
-      const layer = nuxt.options._layers.find(item => item.cwd.includes('iconic-ui'))
+      const layer = nuxt.options._layers.find(item =>
+        item.cwd !== nuxt.options.rootDir && isUiLayer(item.cwd)
+      )
       if (layer) {
-        nuxt.options.alias['#anakata-ui'] = layer.cwd
+        nuxt.options.alias['#iconic-ui'] = layer.cwd
       }
     },
     '@nuxt/ui',
@@ -31,7 +37,7 @@ export default defineNuxtConfig({
   },
 
   alias: existsSync(localUi)
-    ? { '#anakata-ui': localUi }
+    ? { '#iconic-ui': localUi }
     : {},
 
   routeRules: {

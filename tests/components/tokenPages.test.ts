@@ -1,4 +1,4 @@
-import { ApiError } from '#anakata-ui/app/composables/useApi'
+import { ApiError } from '#iconic-ui/app/composables/useApi'
 import { mockNuxtImport, mountSuspended } from '@nuxt/test-utils/runtime'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import AcceptPage from '../../app/pages/accept.vue'

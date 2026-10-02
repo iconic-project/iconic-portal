@@ -1,7 +1,7 @@
 import type { PortalLoginInput, PortalSession } from '../types/api'
 
-const SESSION_STATE = 'anakata.portal.session'
-const FETCHED_STATE = 'anakata.portal.fetched'
+const SESSION_STATE = 'iconic.portal.session'
+const FETCHED_STATE = 'iconic.portal.fetched'
 
 let fetchPromise: Promise<void> | null = null
 

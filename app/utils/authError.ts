@@ -1,4 +1,4 @@
-import { ApiError } from '#anakata-ui/app/composables/useApi'
+import { ApiError } from '#iconic-ui/app/composables/useApi'
 
 function throttleMessage(error: unknown): string | null {
   if (typeof error !== 'object' || error === null) {

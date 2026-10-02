@@ -1,5 +1,5 @@
 import type { PortalBooking, PortalCommission, PortalRequest } from '../../app/types/api'
-import { ApiError } from '#anakata-ui/app/composables/useApi'
+import { ApiError } from '#iconic-ui/app/composables/useApi'
 import { mockNuxtImport, mountSuspended } from '@nuxt/test-utils/runtime'
 import { flushPromises } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -29,8 +29,8 @@ const session = {
 }
 
 function signIn(): void {
-  useState('anakata.portal.session').value = session
-  useState('anakata.portal.fetched').value = true
+  useState('iconic.portal.session').value = session
+  useState('iconic.portal.fetched').value = true
 }
 
 function pageBody<T>(rows: Array<T>) {

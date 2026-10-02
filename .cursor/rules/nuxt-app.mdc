@@ -1,24 +1,24 @@
 ---
-description: Nuxt 4 + Nuxt UI conventions for the Anakata apps (panel, engine, portal)
+description: Nuxt 4 + Nuxt UI conventions for the Iconic apps (panel, engine, portal)
 globs: ["**/*.vue", "**/*.ts", "nuxt.config.ts", "app.config.ts", "**/*.css"]
 alwaysApply: true
 ---
 
-# Anakata Nuxt apps — rules
+# Iconic Nuxt apps — rules
 
 ## Stack
 Nuxt 4 (`app/` directory), Nuxt UI v4, Tailwind CSS v4, TypeScript strict, pnpm.
-Every app **extends the `anakata-ui` layer**, which owns the design tokens, the Nuxt UI theme, fonts, shared components (`Ank*`), `useApi()`, `useMoney()`, `useDates()` and the generated API types. Never redefine tokens or fonts inside an app — change the layer instead. The layer's Nuxt UI overrides match the back office (the panel; RMS and CRM prototypes share identical CSS). **The engine differs** (page background `--forest`, larger buttons: 11px / .24em / 15px 32px, easing curves), so anakata-engine adds its own overrides in its `app.config.ts`, which Nuxt merges over the layer's.
+Every app **extends the `iconic-ui` layer**, which owns the design tokens, the Nuxt UI theme, fonts, shared components (`Ank*`), `useApi()`, `useMoney()`, `useDates()` and the generated API types. Never redefine tokens or fonts inside an app — change the layer instead. The layer's Nuxt UI overrides match the back office (the panel; RMS and CRM prototypes share identical CSS). **The engine differs** (page background `--forest`, larger buttons: 11px / .24em / 15px 32px, easing curves), so iconic-engine adds its own overrides in its `app.config.ts`, which Nuxt merges over the layer's.
 
 | App | Rendering | Users |
 |---|---|---|
-| anakata-panel | `ssr: false` (SPA) | staff (RMS + CRM), Sanctum cookie session |
-| anakata-engine | SSR | public guests; SEO matters |
-| anakata-portal | `ssr: false` (SPA) | agency users, Sanctum cookie session on the `agency` guard. No analytics. No staff permissions |
+| iconic-panel | `ssr: false` (SPA) | staff (RMS + CRM), Sanctum cookie session |
+| iconic-engine | SSR | public guests; SEO matters |
+| iconic-portal | `ssr: false` (SPA) | agency users, Sanctum cookie session on the `agency` guard. No analytics. No staff permissions |
 
 ## Code
 - `<script setup lang="ts">` only. Composition API. No Options API, no `any`.
-- anakata-panel: see `panel.mdc` for its structure. anakata-engine and anakata-portal: pages in `app/pages`, feature components in `app/components/<step-or-area>/`.
+- iconic-panel: see `panel.mdc` for its structure. iconic-engine and iconic-portal: pages in `app/pages`, feature components in `app/components/<step-or-area>/`.
 - The portal does not import from the panel or the engine. It uses the layer. Portal response types are the layer's `Portal*` aliases.
 - The portal has one kind of user. Do not build a staff permission system here. The session is the API's cookie — do not store credentials or tokens in browser storage.
 - The portal carries no analytics, no behavioural events and no consent banner.
@@ -32,7 +32,7 @@ Every app **extends the `anakata-ui` layer**, which owns the design tokens, the 
 - Permission-aware UI (hide/disable what a role can't do) is allowed, but the API is the enforcement — always handle 403/409/422 gracefully with the server's message.
 
 ## Design fidelity — the HILO brand book is the spec
-- Before building a screen, open the HILO brand book (`../anakata-api/docs/brand/hilo-brand-book.html`). Match type, colour, radius, border, and shadow. Light is the default theme. Check dark as well.
+- Before building a screen, open the HILO brand book (`../iconic-api/docs/brand/hilo-brand-book.html`). Match type, colour, radius, border, and shadow. Light is the default theme. Check dark as well.
 - Use Nuxt UI components (themed by the layer) for standard controls: buttons, inputs, selects, tables, tabs, modals, slideovers, toasts, badges, dropdowns.
 - Build custom components when the screen element is bespoke (deck plan, calendar grid, invoice/document layouts, route map, itinerary cards, departure rows). Use the layer's brand tokens (`--hilo-blue-*`, `--bg-*`, `--fg-*`, `--border-*`, `--radius-*`, `--shadow-*`). Legacy names such as `--coral` and `--ivory` alias those tokens.
 - Satoshi only. Headlines are regular weight, sentence case, tracking 0. Eyebrows are 11px, regular, uppercase, tracked 0.06em. Cards are 16px with a hairline border and the xs shadow. Controls are 8px. Cobalt is for primary actions, focus, and brand moments.

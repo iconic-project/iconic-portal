@@ -3,7 +3,7 @@ import { unauthorizedSessionAction } from '../utils/session'
 export default defineNuxtPlugin(() => {
   const { session, clearSession } = usePortalSession()
 
-  useNuxtApp().hook('anakata:api-error', (error) => {
+  useNuxtApp().hook('iconic:api-error', (error) => {
     if (error.status !== 401) {
       return
     }

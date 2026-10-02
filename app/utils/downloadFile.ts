@@ -1,4 +1,4 @@
-import { ApiError, type ApiErrorStatus } from '#anakata-ui/app/composables/useApi'
+import { ApiError, type ApiErrorStatus } from '#iconic-ui/app/composables/useApi'
 
 const API_STATUSES: ReadonlyArray<number> = [401, 403, 409, 419, 422]
 
@@ -61,7 +61,7 @@ function fail(status: number, message: string): never {
     const error = new ApiError(status as ApiErrorStatus, sentence)
 
     try {
-      void useNuxtApp().callHook('anakata:api-error', error)
+      void useNuxtApp().callHook('iconic:api-error', error)
     } catch {
       // Called outside a Nuxt app, in a unit test.
     }

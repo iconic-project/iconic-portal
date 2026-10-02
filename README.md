@@ -1,12 +1,12 @@
-# anakata-portal
+# iconic-portal
 
-The agent portal for Anakata. Nuxt 4, **SPA** (`ssr: false`), on port **3002**. Travel advisors at an approved agency sign in here to see their net rates, availability, bookings, commissions and sales materials. It extends the `anakata-ui` layer and uses the API's agency session cookie. It does not track visits.
+The agent portal for Iconic. Nuxt 4, **SPA** (`ssr: false`), on port **3002**. Travel advisors at an approved agency sign in here to see their net rates, availability, bookings, commissions and sales materials. It extends the `iconic-ui` layer and uses the API's agency session cookie. It does not track visits.
 
 | | |
 |---|---|
 | Port | **3002** |
 | Render | SPA |
-| Layer | local `../anakata-ui`; otherwise `github:anakata-project/anakata-ui#v0.17.1` |
+| Layer | local `../iconic-ui`; otherwise `github:iconic-project/iconic-ui#dev` |
 | API | `NUXT_PUBLIC_API_BASE` (default `http://localhost:8000`) |
 
 The API must already allow this origin. CORS and Sanctum stateful domains use `FRONTEND_PORTAL_URL=http://localhost:3002`.

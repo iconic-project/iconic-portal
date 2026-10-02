@@ -27,8 +27,8 @@ const session = {
 }
 
 function signIn(): void {
-  useState('anakata.portal.session').value = session
-  useState('anakata.portal.fetched').value = true
+  useState('iconic.portal.session').value = session
+  useState('iconic.portal.fetched').value = true
 }
 
 function availabilityRow(

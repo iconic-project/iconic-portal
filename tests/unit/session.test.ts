@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { ApiError } from '#anakata-ui/app/composables/useApi'
+import { ApiError } from '#iconic-ui/app/composables/useApi'
 import { portalAuthMessages } from '../../app/utils/authError'
 import {
   lostSessionTarget,

@@ -10,7 +10,7 @@ export default defineConfig(async () => ({
       {
         resolve: {
           alias: {
-            '#anakata-ui': uiRoot
+            '#iconic-ui': uiRoot
           }
         },
         test: {

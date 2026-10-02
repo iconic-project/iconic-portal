@@ -15,6 +15,6 @@ export type {
   PortalRequestInput,
   PortalResetInput,
   PortalSession
-} from '#anakata-ui/app/types'
+} from '#iconic-ui/app/types'
 
-export type { operations } from '#anakata-ui/app/types/api'
+export type { operations } from '#iconic-ui/app/types/api'
