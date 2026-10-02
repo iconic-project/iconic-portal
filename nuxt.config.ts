@@ -1,9 +1,9 @@
 import { existsSync } from 'node:fs'
 import { resolve } from 'node:path'
 
-const localUi = resolve(import.meta.dirname, '../anakata-ui')
+const localUi = resolve(import.meta.dirname, '../iconic-ui')
 const uiLayer = existsSync(localUi)
-  ? '../anakata-ui'
+  ? '../iconic-ui'
   : 'github:anakata-project/anakata-ui#v0.17.1'
 
 export default defineNuxtConfig({
@@ -11,7 +11,7 @@ export default defineNuxtConfig({
 
   modules: [
     (_options, nuxt) => {
-      const layer = nuxt.options._layers.find(item => item.cwd.includes('anakata-ui'))
+      const layer = nuxt.options._layers.find(item => item.cwd.includes('iconic-ui'))
       if (layer) {
         nuxt.options.alias['#anakata-ui'] = layer.cwd
       }

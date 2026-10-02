@@ -31,12 +31,12 @@ Every app **extends the `anakata-ui` layer**, which owns the design tokens, the 
 - The engine may compute a **preview** price locally for speed, but must re-request the server price before any submission, and display the server result.
 - Permission-aware UI (hide/disable what a role can't do) is allowed, but the API is the enforcement — always handle 403/409/422 gracefully with the server's message.
 
-## Design fidelity — the prototypes are the spec
-- Before building a screen, open its prototype HTML and screenshot. Match it exactly: layout, spacing, font family/size/weight/letter-spacing, colours, borders, hover/active/disabled states, empty states.
+## Design fidelity — the HILO brand book is the spec
+- Before building a screen, open the HILO brand book (`../anakata-api/docs/brand/hilo-brand-book.html`). Match type, colour, radius, border, and shadow. Light is the default theme. Check dark as well.
 - Use Nuxt UI components (themed by the layer) for standard controls: buttons, inputs, selects, tables, tabs, modals, slideovers, toasts, badges, dropdowns.
-- Build custom components when the prototype element is bespoke (deck plan, calendar grid, invoice/document layouts, route map, itinerary cards, departure rows). Port the prototype's CSS for those using the layer's CSS variables (`--forest`, `--coral`, `--ivory`, `--iv62`, `--iv38`, `--hair`, `--sand`, `--olive`, `--ok`, `--warn`).
-- Square corners, hairline borders, uppercase IBM Plex Mono labels, Oswald headings, Archivo body. No shadows, no rounded corners, no Nuxt UI default colours.
-- Check every screen in dark (default) and light theme. The engine must also work at phone width and respect `prefers-reduced-motion`.
+- Build custom components when the screen element is bespoke (deck plan, calendar grid, invoice/document layouts, route map, itinerary cards, departure rows). Use the layer's brand tokens (`--hilo-blue-*`, `--bg-*`, `--fg-*`, `--border-*`, `--radius-*`, `--shadow-*`). Legacy names such as `--coral` and `--ivory` alias those tokens.
+- Satoshi only. Headlines are regular weight, sentence case, tracking 0. Eyebrows are 11px, regular, uppercase, tracked 0.06em. Cards are 16px with a hairline border and the xs shadow. Controls are 8px. Cobalt is for primary actions, focus, and brand moments.
+- The engine must also work at phone width and respect `prefers-reduced-motion`.
 
 ## Quality gate
-`pnpm lint`, `pnpm typecheck`, `pnpm test` and `pnpm build` must pass locally. Apps extend the layer via `../anakata-ui` for now; how they fetch it remotely is decided later with the git host.
+`pnpm lint`, `pnpm typecheck`, `pnpm test` and `pnpm build` must pass locally. Apps extend the layer via `../iconic-ui` for now; how they fetch it remotely is decided later with the git host.

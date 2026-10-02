@@ -4,18 +4,7 @@ const { t } = useI18n()
 
 <template>
   <div class="portal-brand">
-    <img
-      src="/brand/wordmark-dark.png"
-      alt="ANAKATA"
-      class="brand-mark--dark"
-      draggable="false"
-    >
-    <img
-      src="/brand/wordmark-light.png"
-      alt="ANAKATA"
-      class="brand-mark--light"
-      draggable="false"
-    >
+    <AnkWordmark />
     <small>{{ t('shell.brand') }}</small>
   </div>
 </template>

@@ -14,35 +14,18 @@
 }
 
 .portal-brand {
-  font-family: 'Oswald', sans-serif;
-  letter-spacing: .3em;
+  font-family: var(--font-display);
+  letter-spacing: 0;
   font-size: 15px;
   padding: 0 22px 22px;
   border-bottom: 1px solid var(--hair);
 }
 
-.portal-brand img {
-  height: 12px;
-  display: block;
-}
-
-.portal-brand img.brand-mark--dark {
-  display: none;
-}
-
-.dark .portal-brand img.brand-mark--dark {
-  display: block;
-}
-
-.dark .portal-brand img.brand-mark--light {
-  display: none;
-}
-
 .portal-brand small {
   display: block;
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 8.5px;
-  letter-spacing: .28em;
+  font-family: var(--font-sans);
+  font-size: 11px;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--iv38);
   margin-top: 6px;
@@ -50,29 +33,27 @@
 
 .portal-nav a {
   display: block;
-  padding: 10px 22px;
-  color: var(--iv62);
+  margin: 2px 12px;
+  padding: 8px 12px;
+  color: var(--fg-muted);
   text-decoration: none;
-  font-size: 13px;
-  border-left: 2px solid transparent;
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: 8px;
 }
 
 .portal-nav a.is-on {
-  color: var(--ivory);
-  border-left-color: var(--coral);
-  background: rgba(232, 86, 70, .07);
+  color: var(--fg-brand);
+  background: var(--hilo-blue-50);
+}
+
+.dark .portal-nav a.is-on {
+  background: color-mix(in srgb, var(--hilo-blue-300) 18%, transparent);
 }
 
 .portal-nav a:hover {
-  color: var(--ivory);
-}
-
-.portal-prow {
-  width: 36px;
-  height: 19px;
-  display: block;
-  margin: auto auto 0;
-  padding-top: 28px;
+  color: var(--fg-default);
+  background: var(--bg-surface-alt);
 }
 
 .portal-main {
@@ -103,23 +84,23 @@
 }
 
 .portal-agency {
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 10px;
-  letter-spacing: .14em;
+  font-family: var(--font-sans);
+  font-size: 11px;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--sand);
 }
 
 .portal-who .mono {
   color: var(--iv38);
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 10px;
-  letter-spacing: .14em;
+  font-family: var(--font-sans);
+  font-size: 11px;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
 }
 
 .who-email {
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: var(--font-sans);
   font-size: 10px;
   letter-spacing: 0;
   text-transform: none;
@@ -135,7 +116,7 @@
 .auth-layout {
   position: relative;
   min-height: 100vh;
-  background: var(--forest);
+  background: var(--bg-canvas);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -151,6 +132,11 @@
 .auth-column {
   width: 400px;
   max-width: 100%;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 16px;
+  box-shadow: var(--shadow-sm);
+  padding: 32px 28px;
 }
 
 .auth-column .portal-brand {
@@ -173,9 +159,9 @@
 }
 
 .auth-link {
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 10px;
-  letter-spacing: .14em;
+  font-family: var(--font-sans);
+  font-size: 11px;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--ivory);
   text-decoration: none;
@@ -195,7 +181,7 @@
 
 .warnbox {
   border: 1px solid var(--coral);
-  background: rgba(232, 86, 70, .08);
+  background: color-mix(in srgb, var(--hilo-blue-500) 8%, transparent);
   padding: 14px 16px;
   font-size: 12.5px;
   margin: 0;
@@ -215,9 +201,9 @@
 }
 
 .prevl {
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 8.5px;
-  letter-spacing: .14em;
+  font-family: var(--font-sans);
+  font-size: 11px;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--iv38);
   margin-bottom: 10px;
@@ -240,9 +226,9 @@ table.list {
 }
 
 table.list th {
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 8.5px;
-  letter-spacing: .16em;
+  font-family: var(--font-sans);
+  font-size: 11px;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--iv38);
   text-align: left;
@@ -277,9 +263,9 @@ tr.dr-empty td {
   align-items: center;
   gap: 12px;
   padding: 12px 0;
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 10px;
-  letter-spacing: .1em;
+  font-family: var(--font-sans);
+  font-size: 11px;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--iv62);
 }
@@ -370,8 +356,8 @@ tr.dr-empty td {
 }
 
 .bk-ref {
-  font-family: 'IBM Plex Mono', monospace;
-  letter-spacing: .1em;
+  font-family: var(--font-sans);
+  letter-spacing: 0;
   color: var(--sand);
 }
 
@@ -382,9 +368,9 @@ tr.dr-empty td {
 
 .field label {
   display: block;
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 9px;
-  letter-spacing: .2em;
+  font-family: var(--font-sans);
+  font-size: 11px;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--iv62);
   margin-bottom: 6px;
@@ -398,9 +384,9 @@ tr.dr-empty td {
   border: 1px solid var(--hair);
   color: var(--ivory);
   padding: 11px 12px;
-  font-family: 'Archivo', sans-serif;
+  font-family: var(--font-sans);
   font-size: 13px;
-  border-radius: 0;
+  border-radius: 8px;
   outline: none;
 }
 
@@ -418,9 +404,9 @@ tr.dr-empty td {
   background: none;
   border: 1px solid var(--hair);
   color: var(--coral-400);
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 8px;
-  letter-spacing: .1em;
+  font-family: var(--font-sans);
+  font-size: 11px;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   text-decoration: none;
   padding: 2px 6px;
@@ -439,5 +425,5 @@ tr.dr-empty td {
 @media (max-width: 800px) {
   .portal-side {
     display: none;
-  }
+}
 }

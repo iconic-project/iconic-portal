@@ -8,7 +8,7 @@ export default withNuxt(
   {
     settings: {
       'better-tailwindcss': {
-        entryPoint: '../anakata-ui/app/assets/css/main.css',
+        entryPoint: '../iconic-ui/app/assets/css/main.css',
         attributes: [
           ...getDefaultAttributes(),
           ['^v-bind:ui$', [{ match: 'objectValues' }]]

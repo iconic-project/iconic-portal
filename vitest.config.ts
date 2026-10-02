@@ -2,7 +2,7 @@ import { resolve } from 'node:path'
 import { defineConfig } from 'vitest/config'
 import { defineVitestProject } from '@nuxt/test-utils/config'
 
-const uiRoot = resolve(import.meta.dirname, '../anakata-ui')
+const uiRoot = resolve(import.meta.dirname, '../iconic-ui')
 
 export default defineConfig(async () => ({
   test: {

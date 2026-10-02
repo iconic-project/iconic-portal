@@ -48,14 +48,6 @@ useHead(() => ({
           {{ t(item.labelKey) }}
         </NuxtLink>
       </nav>
-      <img
-        class="portal-prow"
-        src="/brand/prow.png"
-        alt=""
-        width="36"
-        height="19"
-        draggable="false"
-      >
     </aside>
 
     <main class="portal-main">
