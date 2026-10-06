@@ -1,10 +1,17 @@
 <script setup lang="ts">
-import type { operations, PortalBooking } from '../types/api'
+import type { PortalStayBooking } from '../types/api'
 import { portalPageMessages } from '../utils/authError'
 import { listPath } from '../utils/listPath'
 import { bookingStatusKey, bookingStatusTone } from '../utils/portalStatus'
 
-type BookingsBody = operations['portalBooking.index']['responses'][200]['content']['application/json']
+type BookingsBody = {
+  data: Array<PortalStayBooking>
+  meta: {
+    current_page: number
+    last_page: number
+    total: number
+  }
+}
 
 const { t } = useI18n()
 const { request } = useApi()
@@ -13,9 +20,9 @@ const { format } = useDates()
 const page = ref(1)
 const pending = ref(true)
 const errors = ref<Array<string>>([])
-const rows = ref<Array<PortalBooking>>([])
+const rows = ref<Array<PortalStayBooking>>([])
 const meta = ref<BookingsBody['meta'] | null>(null)
-const selected = ref<PortalBooking | null>(null)
+const selected = ref<PortalStayBooking | null>(null)
 
 async function load(): Promise<void> {
   pending.value = true
@@ -40,7 +47,7 @@ function go(next: number): void {
   void load()
 }
 
-function openBooking(row: PortalBooking): void {
+function openBooking(row: PortalStayBooking): void {
   selected.value = row
 }
 
@@ -78,8 +85,9 @@ void load()
           <thead>
             <tr>
               <th>{{ t('bookings.colReference') }}</th>
-              <th>{{ t('bookings.colDeparture') }}</th>
-              <th>{{ t('bookings.colItinerary') }}</th>
+              <th>{{ t('bookings.colCheckIn') }}</th>
+              <th>{{ t('bookings.colCheckOut') }}</th>
+              <th>{{ t('bookings.colRoomType') }}</th>
               <th>{{ t('bookings.colStatus') }}</th>
               <th>{{ t('bookings.colClient') }}</th>
               <th>{{ t('bookings.colNetDue') }}</th>
@@ -91,7 +99,7 @@ void load()
               v-if="rows.length === 0"
               class="dr-empty"
             >
-              <td colspan="7">
+              <td colspan="8">
                 {{ t('bookings.empty') }}
               </td>
             </tr>
@@ -109,8 +117,9 @@ void load()
               <td class="bk-ref">
                 {{ row.reference ?? '—' }}
               </td>
-              <td>{{ format(row.departure_date, 'short') }}</td>
-              <td>{{ row.itinerary }}</td>
+              <td>{{ format(row.check_in, 'short') }}</td>
+              <td>{{ format(row.check_out, 'short') }}</td>
+              <td>{{ row.room_type?.name ?? '—' }}</td>
               <td>
                 <AnkPill
                   :tone="bookingStatusTone(row.status)"
@@ -167,12 +176,16 @@ void load()
             <span class="bk-ref">{{ selected.reference ?? '—' }}</span>
           </div>
           <div class="kv">
-            <span>{{ t('bookings.colDeparture') }}</span>
-            <span>{{ format(selected.departure_date, 'short') }}</span>
+            <span>{{ t('bookings.colCheckIn') }}</span>
+            <span>{{ format(selected.check_in, 'short') }}</span>
           </div>
           <div class="kv">
-            <span>{{ t('bookings.colItinerary') }}</span>
-            <span>{{ selected.itinerary }}</span>
+            <span>{{ t('bookings.colCheckOut') }}</span>
+            <span>{{ format(selected.check_out, 'short') }}</span>
+          </div>
+          <div class="kv">
+            <span>{{ t('bookings.colRoomType') }}</span>
+            <span>{{ selected.room_type?.name ?? '—' }}</span>
           </div>
           <div class="kv">
             <span>{{ t('bookings.colStatus') }}</span>

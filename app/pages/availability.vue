@@ -1,115 +1,106 @@
 <script setup lang="ts">
-import type { operations, PortalAvailabilityRow } from '../types/api'
-import { canRequestDeparture, labelTone } from '../utils/availabilityLabel'
-import { availabilityPath } from '../utils/availabilityQuery'
+import type { PortalStayAvailability, PortalStayCalendar } from '../types/api'
 import { portalPageMessages } from '../utils/authError'
+import { availabilityPath, calendarPath, canRequestRoom, nightMark, requestPath, shiftMonth, thisMonth } from '../utils/portalStay'
 
-type AvailabilityBody = operations['portalAvailability.index']['responses'][200]['content']['application/json']
-
-type Filters = {
-  fromMonth: string
-  toMonth: string
-  yacht: string
-  itinerary: string
+type StayRange = {
+  check_in: string
+  check_out: string
 }
 
 const { t } = useI18n()
 const { request } = useApi()
 const { format } = useDates()
 
-const draft = reactive<Filters>({
-  fromMonth: '',
-  toMonth: '',
-  yacht: '',
-  itinerary: ''
-})
-const applied = ref<Filters>({
-  fromMonth: '',
-  toMonth: '',
-  yacht: '',
-  itinerary: ''
-})
-const page = ref(1)
+const stay = ref<StayRange | null>(null)
+const adults = ref(2)
+const month = ref(thisMonth())
+const view = ref<'rooms' | 'month'>('rooms')
 const pending = ref(true)
 const errors = ref<Array<string>>([])
-const rows = ref<Array<PortalAvailabilityRow>>([])
-const meta = ref<AvailabilityBody['meta'] | null>(null)
+const calendar = ref<PortalStayCalendar | null>(null)
+const results = ref<PortalStayAvailability | null>(null)
 
-async function load(): Promise<void> {
+const limits = computed(() => calendar.value?.stay ?? results.value?.stay ?? null)
+
+const nights = computed(() => {
+  const map = new Map<string, PortalStayCalendar['nights'][number]>()
+
+  for (const night of calendar.value?.nights ?? []) {
+    map.set(night.night, night)
+  }
+
+  return map
+})
+
+function nightInfo(date: string) {
+  return nightMark(nights.value.get(date))
+}
+
+async function loadCalendar(): Promise<void> {
   pending.value = true
   errors.value = []
 
   try {
-    const body = await request(availabilityPath({
-      ...applied.value,
-      page: page.value
-    })) as AvailabilityBody
-
-    rows.value = body.data
-    meta.value = body.meta
+    calendar.value = await request(calendarPath(month.value, adults.value)) as PortalStayCalendar
   } catch (caught: unknown) {
-    rows.value = []
-    meta.value = null
+    calendar.value = null
     errors.value = portalPageMessages(caught)
   } finally {
     pending.value = false
   }
 }
 
-function show(): void {
-  page.value = 1
-  applied.value = { ...draft }
-  void load()
+async function search(): Promise<void> {
+  if (!stay.value) {
+    errors.value = [t('availability.stayRequired')]
+    return
+  }
+
+  pending.value = true
+  errors.value = []
+  view.value = 'rooms'
+
+  try {
+    results.value = await request(availabilityPath(stay.value.check_in, stay.value.check_out, adults.value)) as PortalStayAvailability
+  } catch (caught: unknown) {
+    results.value = null
+    errors.value = portalPageMessages(caught)
+  } finally {
+    pending.value = false
+  }
 }
 
-function go(next: number): void {
-  page.value = next
-  void load()
+function moveMonth(delta: number): void {
+  month.value = shiftMonth(month.value, delta)
+  void loadCalendar()
 }
 
-void load()
+void loadCalendar()
 </script>
 
 <template>
   <div>
     <form
       class="portal-filters"
-      @submit.prevent="show"
+      @submit.prevent="search"
     >
+      <AnkStayInput
+        v-if="limits"
+        v-model="stay"
+        :min-nights="limits.min_nights"
+        :max-nights="limits.max_nights"
+        :night-info="nightInfo"
+      />
       <div class="field">
-        <label for="av-from">{{ t('availability.from') }}</label>
+        <label for="av-adults">{{ t('availability.adults') }}</label>
         <input
-          id="av-from"
-          v-model="draft.fromMonth"
-          type="month"
-        >
-      </div>
-      <div class="field">
-        <label for="av-to">{{ t('availability.to') }}</label>
-        <input
-          id="av-to"
-          v-model="draft.toMonth"
-          type="month"
-        >
-      </div>
-      <div class="field">
-        <label for="av-yacht">{{ t('availability.yacht') }}</label>
-        <input
-          id="av-yacht"
-          v-model="draft.yacht"
-          type="text"
-          autocomplete="off"
-          spellcheck="false"
-        >
-      </div>
-      <div class="field">
-        <label for="av-itinerary">{{ t('availability.itinerary') }}</label>
-        <input
-          id="av-itinerary"
-          v-model="draft.itinerary"
-          type="text"
-          autocomplete="off"
-          spellcheck="false"
+          id="av-adults"
+          v-model.number="adults"
+          type="number"
+          min="1"
+          step="1"
+          required
         >
       </div>
       <UButton
@@ -118,6 +109,14 @@ void load()
       >
         {{ t('availability.apply') }}
       </UButton>
+      <button
+        type="button"
+        class="mini"
+        :data-view="view"
+        @click="view = view === 'rooms' ? 'month' : 'rooms'"
+      >
+        {{ view === 'rooms' ? t('availability.month') : t('availability.rooms') }}
+      </button>
     </form>
 
     <p
@@ -137,81 +136,119 @@ void load()
         {{ message }}
       </p>
     </div>
-    <template v-else>
-      <div class="portal-scroll">
-        <table class="list">
-          <thead>
-            <tr>
-              <th>{{ t('availability.date') }}</th>
-              <th>{{ t('availability.yacht') }}</th>
-              <th>{{ t('availability.itinerary') }}</th>
-              <th>{{ t('availability.label') }}</th>
-              <th>{{ t('rates.suitePp') }}</th>
-              <th>{{ t('rates.ownerPp') }}</th>
-              <th />
-            </tr>
-          </thead>
-          <tbody>
+    <div
+      v-else-if="view === 'month' && calendar"
+      class="portal-scroll"
+    >
+      <p class="portal-toolbar">
+        <button
+          type="button"
+          class="mini"
+          @click="moveMonth(-1)"
+        >
+          {{ t('availability.previous') }}
+        </button>
+        <span>{{ calendar.from }}</span>
+        <button
+          type="button"
+          class="mini"
+          @click="moveMonth(1)"
+        >
+          {{ t('availability.next') }}
+        </button>
+      </p>
+      <table class="list mini-t">
+        <thead>
+          <tr>
+            <th>{{ t('availability.night') }}</th>
+            <th>{{ t('availability.label') }}</th>
+            <th>{{ t('availability.fromPrice') }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr
+            v-for="night in calendar.nights"
+            :key="night.night"
+            :data-night="night.night"
+          >
+            <td>{{ format(night.night, 'short') }}</td>
+            <td>{{ night.available ? t('availability.open') : t('availability.closed') }}</td>
+            <td>
+              <AnkMoney
+                v-if="night.from_price !== null"
+                :amount="night.from_price"
+              />
+              <template v-else>
+                —
+              </template>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div
+      v-else
+      class="portal-scroll"
+    >
+      <table class="list mini-t">
+        <thead>
+          <tr>
+            <th>{{ t('availability.roomType') }}</th>
+            <th>{{ t('availability.roomsLeft') }}</th>
+            <th>{{ t('availability.plan') }}</th>
+            <th>{{ t('availability.net') }}</th>
+            <th />
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-if="!results">
+            <td colspan="5">
+              {{ t('availability.prompt') }}
+            </td>
+          </tr>
+          <tr v-else-if="results.room_types.length === 0">
+            <td colspan="5">
+              {{ t('availability.empty') }}
+            </td>
+          </tr>
+          <template
+            v-for="type in results?.room_types ?? []"
+            :key="type.code"
+          >
             <tr
-              v-if="rows.length === 0"
-              class="dr-empty"
+              v-if="!canRequestRoom(type.bookable, type.quotes.length)"
+              :data-room-type="type.code"
             >
-              <td colspan="7">
-                {{ t('availability.empty') }}
+              <td>{{ type.name }}</td>
+              <td>{{ type.rooms_left }}</td>
+              <td colspan="3">
+                {{ type.reasons.join(', ') }}
               </td>
             </tr>
             <tr
-              v-for="row in rows"
-              :key="row.id"
-              :data-departure="row.id"
+              v-for="quote in canRequestRoom(type.bookable, type.quotes.length) ? type.quotes : []"
+              :key="`${type.code}-${quote.rate_plan}`"
+              :data-room-type="type.code"
             >
-              <td>{{ format(row.embark, 'short') }}</td>
-              <td>{{ row.yacht }}</td>
-              <td>{{ row.itinerary }}</td>
+              <td>{{ type.name }}</td>
+              <td>{{ type.rooms_left }}</td>
+              <td>{{ quote.rate_plan }}</td>
               <td>
-                <AnkPill :tone="labelTone(row.label.code)">
-                  {{ row.label.text }}
-                </AnkPill>
-              </td>
-              <td>
-                <AnkMoney :amount="row.net_rates.suite_pp" />
-              </td>
-              <td>
-                <AnkMoney :amount="row.net_rates.owner_pp" />
+                <AnkMoney :amount="quote.total" />
               </td>
               <td>
                 <NuxtLink
-                  v-if="canRequestDeparture(row.label.code)"
+                  v-if="results"
                   class="mini"
-                  :to="{ path: '/requests/new', query: { departure_id: String(row.id) } }"
+                  :to="requestPath(results.check_in, results.check_out, type.code, adults, quote.rate_plan)"
                 >
                   {{ t('availability.request') }}
                 </NuxtLink>
               </td>
             </tr>
-          </tbody>
-        </table>
-      </div>
-      <div
-        v-if="meta && meta.last_page > 1"
-        class="list-pager"
-      >
-        <button
-          type="button"
-          :disabled="meta.current_page <= 1"
-          @click="go(meta.current_page - 1)"
-        >
-          {{ t('availability.previous') }}
-        </button>
-        <span>{{ t('availability.pager', { page: String(meta.current_page), total: String(meta.total) }) }}</span>
-        <button
-          type="button"
-          :disabled="meta.current_page >= meta.last_page"
-          @click="go(meta.current_page + 1)"
-        >
-          {{ t('availability.next') }}
-        </button>
-      </div>
-    </template>
+          </template>
+        </tbody>
+      </table>
+    </div>
   </div>
 </template>

@@ -14,7 +14,14 @@ export type {
   PortalRequestCreated,
   PortalRequestInput,
   PortalResetInput,
-  PortalSession
+  PortalSession,
+  PortalStayAvailability,
+  PortalStayBooking,
+  PortalStayCalendar,
+  PortalStayCommission,
+  PortalStayRates,
+  PortalStayRequestInput,
+  PortalStayRoomType
 } from '#iconic-ui/app/types'
 
 export type { operations } from '#iconic-ui/app/types/api'

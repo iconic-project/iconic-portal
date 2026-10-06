@@ -1,10 +1,17 @@
 <script setup lang="ts">
-import type { operations, PortalCommission } from '../types/api'
+import type { PortalStayCommission } from '../types/api'
 import { portalPageMessages } from '../utils/authError'
 import { listPath } from '../utils/listPath'
 import { commissionStatusKey, commissionStatusTone } from '../utils/portalStatus'
 
-type CommissionsBody = operations['portalCommission.index']['responses'][200]['content']['application/json']
+type CommissionsBody = {
+  data: Array<PortalStayCommission>
+  meta: {
+    current_page: number
+    last_page: number
+    total: number
+  }
+}
 
 const { t } = useI18n()
 const { request } = useApi()
@@ -13,7 +20,7 @@ const { format } = useDates()
 const page = ref(1)
 const pending = ref(true)
 const errors = ref<Array<string>>([])
-const rows = ref<Array<PortalCommission>>([])
+const rows = ref<Array<PortalStayCommission>>([])
 const meta = ref<CommissionsBody['meta'] | null>(null)
 
 async function load(): Promise<void> {
@@ -47,7 +54,7 @@ function rateLabel(rate: number | null): string {
   return t('commissions.ratePct', { pct: String(rate) })
 }
 
-function paidLine(row: PortalCommission): string {
+function paidLine(row: PortalStayCommission): string {
   if (row.payout === null) {
     return ''
   }
@@ -89,6 +96,7 @@ void load()
           <thead>
             <tr>
               <th>{{ t('commissions.colReference') }}</th>
+              <th>{{ t('commissions.colStay') }}</th>
               <th>{{ t('commissions.colRate') }}</th>
               <th>{{ t('commissions.colAmount') }}</th>
               <th>{{ t('commissions.colPayable') }}</th>
@@ -100,7 +108,7 @@ void load()
               v-if="rows.length === 0"
               class="dr-empty"
             >
-              <td colspan="5">
+              <td colspan="6">
                 {{ t('commissions.empty') }}
               </td>
             </tr>
@@ -112,6 +120,7 @@ void load()
               <td class="bk-ref">
                 {{ row.reference ?? '—' }}
               </td>
+              <td>{{ format(row.check_in, 'short') }} – {{ format(row.check_out, 'short') }}</td>
               <td>{{ rateLabel(row.rate) }}</td>
               <td>
                 <AnkMoney :amount="row.commission_amount" />

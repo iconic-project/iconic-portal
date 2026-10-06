@@ -1,4 +1,4 @@
-import type { PortalBooking, PortalCommission, PortalRequest } from '../../app/types/api'
+import type { PortalRequest, PortalStayBooking, PortalStayCommission, PortalStayRates } from '../../app/types/api'
 import { ApiError } from '#iconic-ui/app/composables/useApi'
 import { mockNuxtImport, mountSuspended } from '@nuxt/test-utils/runtime'
 import { flushPromises } from '@vue/test-utils'
@@ -50,11 +50,12 @@ function pageBody<T>(rows: Array<T>) {
   }
 }
 
-const booking: PortalBooking = {
+const booking: PortalStayBooking = {
   id: 15,
   reference: 'ANK-2026-0005',
-  departure_date: '2026-09-27',
-  itinerary: 'WEST',
+  check_in: '2026-09-27',
+  check_out: '2026-10-01',
+  room_type: { code: 'FAM', name: 'Family' },
   status: 'REQUESTED',
   lead_guest: 'Elena Voss',
   net_due: 22610,
@@ -73,14 +74,39 @@ const checkout = {
   created_at: '2026-09-23T12:00:00.000000Z'
 }
 
-const holdSentence = 'This request does not hold a cabin. The team will answer within 16 hours. This request is waiting on the commission-cap decision.'
+const holdSentence = 'This request holds the room. The team will answer within 16 hours. This request is waiting on the commission-cap decision.'
+
+const formRates: PortalStayRates = {
+  commission_pct: 10,
+  currency: 'USD',
+  stay: { min_nights: 1, max_nights: 30, max_rooms: 4 },
+  seasons: [],
+  room_types: [{ code: 'FAM', name: 'Family' }],
+  room_rates: [],
+  rate_plans: [{
+    code: 'BAR',
+    name: 'Best available',
+    default: true,
+    adjust_pct: 0,
+    refundable: true,
+    deposit_pct: 30,
+    balance_days: 21,
+    cancellation: 'standard',
+    meal_plan: 'RO'
+  }],
+  length_of_stay: [],
+  supplements: []
+}
 
 function commission(
-  status: PortalCommission['status'],
-  payout: PortalCommission['payout']
-): PortalCommission {
+  status: PortalStayCommission['status'],
+  payout: PortalStayCommission['payout']
+): PortalStayCommission {
   return {
     reference: status === 'PAID' ? 'ANK-PAID' : `ANK-${status}`,
+    check_in: '2026-09-27',
+    check_out: '2026-10-04',
+    room_type: { code: 'FAM', name: 'Family' },
     rate: 12,
     commission_amount: 3390,
     payable_date: '2026-11-03',
@@ -104,7 +130,7 @@ describe('bookings page', () => {
     expect(wrapper.get('[data-field="net_due"]').text()).toBe('USD 22,610')
     expect(wrapper.get('[data-field="payment_state"]').text()).toBe('Awaiting deposit')
     expect(wrapper.text()).toContain('Elena Voss')
-    expect(wrapper.text()).toContain('WEST')
+    expect(wrapper.text()).toContain('Family')
     expect(wrapper.text()).toContain('REQUESTED')
     expect(wrapper.text()).not.toContain('Guests')
     expect(wrapper.text()).not.toContain('Documents')
@@ -118,7 +144,8 @@ describe('bookings page', () => {
     expect(drawer).not.toBeNull()
     expect(drawer?.textContent).toContain('ANK-2026-0005')
     expect(drawer?.textContent).toContain('27 Sep 2026')
-    expect(drawer?.textContent).toContain('WEST')
+    expect(drawer?.textContent).toContain('1 Oct 2026')
+    expect(drawer?.textContent).toContain('Family')
     expect(drawer?.textContent).toContain('REQUESTED')
     expect(drawer?.textContent).toContain('Elena Voss')
     expect(drawer?.textContent).toContain('USD 22,610')
@@ -159,7 +186,7 @@ describe('bookings page', () => {
   })
 
   it('hides pay when the booking is paid, closed, or already has that link open', async () => {
-    const hidden: Array<PortalBooking> = [
+    const hidden: Array<PortalStayBooking> = [
       { ...booking, reference: 'PAID', payment_state: 'Paid in full' },
       { ...booking, reference: 'CANCELLED', status: 'CANCELLED' },
       { ...booking, reference: 'OPEN', open_payment_kinds: ['DEPOSIT'] }
@@ -177,7 +204,7 @@ describe('bookings page', () => {
   })
 
   it('starts a balance checkout when the deposit is already received', async () => {
-    const row: PortalBooking = {
+    const row: PortalStayBooking = {
       ...booking,
       reference: 'BAL',
       payment_state: 'Deposit received'
@@ -342,7 +369,7 @@ describe('request form', () => {
   }
 
   it('refuses an empty client email before posting', async () => {
-    const wrapper = await mountSuspended(RequestForm, { route: '/requests/new?departure_id=9' })
+    const wrapper = await mountSuspended(RequestForm, { route: '/requests/new?check_in=2026-12-21&check_out=2026-12-25&room_type=FAM&adults=2&rate_plan=BAR' })
     await flushPromises()
 
     await wrapper.get('#req-name').setValue('Elena Voss')
@@ -350,13 +377,13 @@ describe('request form', () => {
     await wrapper.get('form').trigger('submit')
     await flushPromises()
 
-    expect(request).not.toHaveBeenCalled()
+    expect(request).not.toHaveBeenCalledWith('/api/portal/requests', expect.anything())
     expect(wrapper.text()).toContain('A client email is required.')
     expect(wrapper.text()).not.toContain('USD')
   })
 
   it('does not post until the acknowledgement is checked', async () => {
-    const wrapper = await mountSuspended(RequestForm, { route: '/requests/new?departure_id=9' })
+    const wrapper = await mountSuspended(RequestForm, { route: '/requests/new?check_in=2026-12-21&check_out=2026-12-25&room_type=FAM&adults=2&rate_plan=BAR' })
     await flushPromises()
 
     await wrapper.get('#req-name').setValue('Elena Voss')
@@ -364,18 +391,24 @@ describe('request form', () => {
     await wrapper.get('form').trigger('submit')
     await flushPromises()
 
-    expect(request).not.toHaveBeenCalled()
+    expect(request).not.toHaveBeenCalledWith('/api/portal/requests', expect.anything())
     expect(wrapper.text()).toContain('Confirm that the client of record is the end guest.')
   })
 
-  it('shows the created reference and the no-hold sentence', async () => {
-    request.mockResolvedValue({
-      references: ['REQ-2026-0008'],
-      status: 'REQUESTED',
-      message: 'This request does not hold a cabin. The team will answer within 16 hours.'
+  it('shows the created reference and the hold sentence', async () => {
+    request.mockImplementation(async (url: string, options?: { method?: string }) => {
+      if (options?.method === 'POST') {
+        return {
+          references: ['REQ-2026-0008'],
+          status: 'REQUESTED',
+          message: 'This request holds the room. The team will answer within 16 hours.'
+        }
+      }
+
+      return formRates
     })
 
-    const wrapper = await mountSuspended(RequestForm, { route: '/requests/new?departure_id=9' })
+    const wrapper = await mountSuspended(RequestForm, { route: '/requests/new?check_in=2026-12-21&check_out=2026-12-25&room_type=FAM&adults=2&rate_plan=BAR' })
     await flushPromises()
     await fill(wrapper, 'elena@guest.test')
     await wrapper.get('form').trigger('submit')
@@ -384,25 +417,36 @@ describe('request form', () => {
     expect(request).toHaveBeenCalledWith('/api/portal/requests', {
       method: 'POST',
       body: {
-        departure_id: 9,
-        category: 'SUITE',
-        cabins: [{ adults: 1, children: 0 }],
+        check_in: '2026-12-21',
+        check_out: '2026-12-25',
+        rooms: [{
+          room_type: 'FAM',
+          adults: 2,
+          child_ages: [],
+          rate_plan: 'BAR'
+        }],
         client: { name: 'Elena Voss', email: 'elena@guest.test' },
         client_of_record: true
       }
     })
     expect(wrapper.get('[data-request-result]').text()).toContain('REQ-2026-0008')
-    expect(wrapper.get('[data-request-result]').text()).toContain('This request does not hold a cabin. The team will answer within 16 hours.')
+    expect(wrapper.get('[data-request-result]').text()).toContain('This request holds the room. The team will answer within 16 hours.')
   })
 
   it('shows the hold sentence the API returns for an over-cap request', async () => {
-    request.mockResolvedValue({
-      references: ['REQ-2026-0009'],
-      status: 'ON_HOLD_AGENCY',
-      message: holdSentence
+    request.mockImplementation(async (_url: string, options?: { method?: string }) => {
+      if (options?.method === 'POST') {
+        return {
+          references: ['REQ-2026-0009'],
+          status: 'ON_HOLD_AGENCY',
+          message: holdSentence
+        }
+      }
+
+      return formRates
     })
 
-    const wrapper = await mountSuspended(RequestForm, { route: '/requests/new?departure_id=9' })
+    const wrapper = await mountSuspended(RequestForm, { route: '/requests/new?check_in=2026-12-21&check_out=2026-12-25&room_type=FAM&adults=2&rate_plan=BAR' })
     await flushPromises()
     await fill(wrapper, 'elena@guest.test')
     await wrapper.get('form').trigger('submit')
@@ -412,18 +456,24 @@ describe('request form', () => {
     expect(wrapper.text()).toContain('ON HOLD AGENCY')
   })
 
-  it('shows a refused departure in the API\'s words', async () => {
-    request.mockRejectedValue(new ApiError(422, 'The given data was invalid.', {
-      departure: ['FULL · WAITLIST']
-    }))
+  it('shows a refused stay in the API\'s words', async () => {
+    request.mockImplementation(async (_url: string, options?: { method?: string }) => {
+      if (options?.method === 'POST') {
+        throw new ApiError(422, 'The given data was invalid.', {
+          rooms: ['SOLD_OUT']
+        })
+      }
 
-    const wrapper = await mountSuspended(RequestForm, { route: '/requests/new?departure_id=3' })
+      return formRates
+    })
+
+    const wrapper = await mountSuspended(RequestForm, { route: '/requests/new?check_in=2026-12-21&check_out=2026-12-25&room_type=FAM&adults=2&rate_plan=BAR' })
     await flushPromises()
     await fill(wrapper, 'elena@guest.test')
     await wrapper.get('form').trigger('submit')
     await flushPromises()
 
-    expect(wrapper.text()).toContain('FULL · WAITLIST')
+    expect(wrapper.text()).toContain('SOLD_OUT')
     expect(wrapper.find('[data-request-result]').exists()).toBe(false)
   })
 })

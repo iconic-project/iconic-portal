@@ -1,32 +1,32 @@
 <script setup lang="ts">
-import type { operations, PortalAgency, PortalNetRates } from '../types/api'
+import type { PortalStayRates } from '../types/api'
 import { portalPageMessages } from '../utils/authError'
-
-type RatesBody = operations['portalAgency.rates']['responses'][200]['content']['application/json']
+import { nightlyFor } from '../utils/portalStay'
 
 const { t } = useI18n()
 const { request } = useApi()
+const { format } = useDates()
 
 const pending = ref(true)
 const errors = ref<Array<string>>([])
-const years = ref<Array<PortalNetRates>>([])
-const commissionPct = ref<number | null>(null)
+const rates = ref<PortalStayRates | null>(null)
+
+function cell(roomType: string, season: string): number | null {
+  if (!rates.value) {
+    return null
+  }
+
+  return nightlyFor(rates.value, roomType, season)
+}
 
 async function load(): Promise<void> {
   pending.value = true
   errors.value = []
 
   try {
-    const [me, rates] = await Promise.all([
-      request('/api/portal/me') as Promise<PortalAgency>,
-      request('/api/portal/rates') as Promise<RatesBody>
-    ])
-
-    commissionPct.value = me.agency.commission_pct
-    years.value = rates.data
+    rates.value = await request('/api/portal/rates') as PortalStayRates
   } catch (caught: unknown) {
-    commissionPct.value = null
-    years.value = []
+    rates.value = null
     errors.value = portalPageMessages(caught)
   } finally {
     pending.value = false
@@ -55,19 +55,25 @@ void load()
         {{ message }}
       </p>
     </div>
-    <template v-else>
+    <template v-else-if="rates">
+      <p class="prevl">
+        {{ t('rates.line', { pct: String(rates.commission_pct) }) }}
+      </p>
+      <p class="portal-toolbar">
+        <span
+          v-for="season in rates.seasons"
+          :key="season.code"
+          :data-season="season.code"
+        >
+          {{ season.name }} · {{ format(season.from, 'short') }} – {{ format(season.to, 'short') }}
+        </span>
+      </p>
       <div
-        v-if="commissionPct !== null"
-        class="mono prevl"
-      >
-        {{ t('rates.line', { pct: String(commissionPct) }) }}
-      </div>
-      <p
-        v-if="years.length === 0"
-        class="gmeta"
+        v-if="rates.room_rates.length === 0"
+        class="bbnote"
       >
         {{ t('rates.empty') }}
-      </p>
+      </div>
       <div
         v-else
         class="portal-scroll"
@@ -75,48 +81,82 @@ void load()
         <table class="list mini-t">
           <thead>
             <tr>
-              <th>{{ t('rates.netRate') }}</th>
+              <th>{{ t('rates.roomType') }}</th>
               <th
-                v-for="year in years"
-                :key="year.year"
+                v-for="season in rates.seasons"
+                :key="season.code"
               >
-                {{ year.year }}
+                {{ season.name }}
               </th>
             </tr>
           </thead>
           <tbody>
-            <tr>
-              <td>{{ t('rates.suitePp') }}</td>
+            <tr
+              v-for="type in rates.room_types"
+              :key="type.code"
+              :data-room-type="type.code"
+            >
+              <td>{{ type.name }}</td>
               <td
-                v-for="year in years"
-                :key="`s-${year.year}`"
-                :data-year="year.year"
-                data-field="suite_pp"
+                v-for="season in rates.seasons"
+                :key="season.code"
+                :data-rate="`${type.code}-${season.code}`"
               >
-                <AnkMoney :amount="year.suite_pp" />
-              </td>
-            </tr>
-            <tr>
-              <td>{{ t('rates.ownerPp') }}</td>
-              <td
-                v-for="year in years"
-                :key="`o-${year.year}`"
-              >
-                <AnkMoney :amount="year.owner_pp" />
-              </td>
-            </tr>
-            <tr>
-              <td>{{ t('rates.charterWeek') }}</td>
-              <td
-                v-for="year in years"
-                :key="`c-${year.year}`"
-              >
-                <AnkMoney :amount="year.charter_week" />
+                <AnkMoney
+                  v-if="cell(type.code, season.code) !== null"
+                  :amount="cell(type.code, season.code) ?? 0"
+                />
+                <template v-else>
+                  —
+                </template>
               </td>
             </tr>
           </tbody>
         </table>
       </div>
+
+      <p class="prevl">
+        {{ t('rates.plans') }}
+      </p>
+      <ul>
+        <li
+          v-for="plan in rates.rate_plans"
+          :key="plan.code"
+          :data-plan="plan.code"
+        >
+          {{ plan.name }} · {{ plan.code }}
+          <template v-if="plan.adjust_pct !== 0">
+            · {{ plan.adjust_pct }}%
+          </template>
+        </li>
+      </ul>
+
+      <p class="prevl">
+        {{ t('rates.lengthOfStay') }}
+      </p>
+      <ul>
+        <li
+          v-for="band in rates.length_of_stay"
+          :key="band.min_nights"
+        >
+          {{ t('rates.losBand', { nights: String(band.min_nights), pct: String(band.discount_pct) }) }}
+        </li>
+      </ul>
+
+      <p class="prevl">
+        {{ t('rates.supplements') }}
+      </p>
+      <ul>
+        <li
+          v-for="row in rates.supplements"
+          :key="row.code"
+          :data-supplement="row.code"
+        >
+          {{ row.label }} ·
+          <AnkMoney :amount="row.per_night" />
+          · {{ row.basis }}
+        </li>
+      </ul>
     </template>
   </div>
 </template>

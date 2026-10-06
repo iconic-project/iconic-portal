@@ -1,4 +1,4 @@
-import type { PortalAvailabilityRow } from '../../app/types/api'
+import type { PortalStayCalendar, PortalStayRates } from '../../app/types/api'
 import { mockNuxtImport, mountSuspended } from '@nuxt/test-utils/runtime'
 import { flushPromises } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -31,40 +31,50 @@ function signIn(): void {
   useState('iconic.portal.fetched').value = true
 }
 
-function availabilityRow(
-  id: number,
-  code: PortalAvailabilityRow['label']['code'],
-  text: string
-): PortalAvailabilityRow {
-  return {
-    id,
-    itinerary: 'WEST',
-    yacht: 'ANAMARA',
-    embark: '2026-09-27',
-    disembark: '2026-10-04',
-    festive: false,
-    rate_year: 2026,
-    status: 'ON_SALE',
-    label: { code, text },
-    net_rates: { suite_pp: 22610, owner_pp: 30524 }
-  }
+const stayRates: PortalStayRates = {
+  commission_pct: 15,
+  currency: 'USD',
+  stay: { min_nights: 1, max_nights: 30, max_rooms: 4 },
+  seasons: [{ code: 'PEAK', name: 'Peak', from: '2026-12-20', to: '2026-12-31' }],
+  room_types: [{ code: 'FAM', name: 'Family' }],
+  room_rates: [{ room_type: 'FAM', season: 'PEAK', nightly: 306 }],
+  rate_plans: [{
+    code: 'BAR',
+    name: 'Best available',
+    default: true,
+    adjust_pct: 0,
+    refundable: true,
+    deposit_pct: 30,
+    balance_days: 21,
+    cancellation: 'standard',
+    meal_plan: 'RO'
+  }],
+  length_of_stay: [{ min_nights: 7, discount_pct: 10 }],
+  supplements: [{
+    code: 'FEST',
+    label: 'Festive',
+    from: '2026-12-24',
+    to: '2026-12-26',
+    per_night: 18,
+    basis: 'ROOM'
+  }]
 }
 
-function availabilityBody(rows: Array<PortalAvailabilityRow>) {
-  return {
-    data: rows,
-    links: { first: null, last: null, prev: null, next: null },
-    meta: {
-      current_page: 1,
-      from: rows.length ? 1 : null,
-      last_page: 1,
-      links: [],
-      path: null,
-      per_page: 50,
-      to: rows.length || null,
-      total: rows.length
-    }
-  }
+const calendar: PortalStayCalendar = {
+  from: '2026-12',
+  months: 1,
+  adults: 2,
+  children: 0,
+  commission_pct: 10,
+  stay: { min_nights: 1, max_nights: 30, max_rooms: 4 },
+  nights: [{
+    night: '2026-12-21',
+    available: true,
+    from_price: 90,
+    closed_to_arrival: false,
+    closed_to_departure: false,
+    min_stay: 1
+  }]
 }
 
 describe('rates page', () => {
@@ -73,34 +83,18 @@ describe('rates page', () => {
     signIn()
   })
 
-  it('renders the payload integers and the commission percent from the agency', async () => {
-    request.mockImplementation(async (url: string) => {
-      if (url === '/api/portal/me') {
-        return {
-          agency: {
-            name: 'Blue Latitude',
-            reference: 'AG-4',
-            commission_pct: 15,
-            payment_terms: 'Net 30',
-            status: 'APPROVED'
-          },
-          user: { id: 1, name: 'Ada', email: 'ada@portal.test' },
-          materials_exist: false
-        }
-      }
-
-      return {
-        data: [{ year: 2026, suite_pp: 22610, owner_pp: 30524, charter_week: 169575 }]
-      }
-    })
+  it('renders the season matrix and the commission percent', async () => {
+    request.mockResolvedValue(stayRates)
 
     const wrapper = await mountSuspended(RatesPage, { route: '/rates' })
     await flushPromises()
 
     expect(wrapper.text()).toContain('NET RATES (PUBLIC − 15%) · PUBLIC PRICES NEVER SHOWN')
-    expect(wrapper.get('[data-field="suite_pp"]').text()).toBe('USD 22,610')
-    expect(wrapper.text()).toContain('USD 30,524')
-    expect(wrapper.text()).toContain('USD 169,575')
+    expect(wrapper.get('[data-room-type="FAM"]').text()).toContain('Family')
+    expect(wrapper.get('[data-rate="FAM-PEAK"]').text()).toContain('306')
+    expect(wrapper.get('[data-plan="BAR"]').text()).toContain('Best available')
+    expect(wrapper.get('[data-supplement="FEST"]').text()).toContain('18')
+    expect(wrapper.text()).not.toContain('13,300')
     expect(request).toHaveBeenCalledWith('/api/portal/rates')
   })
 })
@@ -109,23 +103,20 @@ describe('availability page', () => {
   beforeEach(() => {
     request.mockReset()
     signIn()
-    request.mockResolvedValue(availabilityBody([
-      availabilityRow(3, 'FULL', 'FULL · WAITLIST'),
-      availabilityRow(9, 'AVAILABLE', 'AVAILABLE')
-    ]))
+    request.mockResolvedValue(calendar)
   })
 
-  it('hides Request on a sold-out departure and links an open one', async () => {
+  it('shows the month grid and does not offer a request before a search', async () => {
     const wrapper = await mountSuspended(AvailabilityPage, { route: '/availability' })
     await flushPromises()
 
-    const requests = wrapper.findAll('a').filter(link => link.text() === 'Request')
+    expect(wrapper.text()).toContain('Choose dates to see rooms.')
+    expect(wrapper.findAll('a').filter(link => link.text() === 'Request')).toHaveLength(0)
 
-    expect(wrapper.text()).toContain('FULL · WAITLIST')
-    expect(requests).toHaveLength(1)
-    expect(requests[0]?.attributes('href')).toContain('/requests/new')
-    expect(requests[0]?.attributes('href')).toContain('departure_id=9')
-    expect(wrapper.get('[data-departure="3"]').text()).not.toContain('Request')
+    await wrapper.get('[data-view="rooms"]').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.get('[data-night="2026-12-21"]').text()).toContain('USD 90')
   })
 })
 

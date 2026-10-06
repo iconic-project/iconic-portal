@@ -1,27 +1,26 @@
 <script setup lang="ts">
-import type { PortalRequestCreated, PortalRequestInput } from '../../types/api'
+import type { PortalRequestCreated, PortalStayRates } from '../../types/api'
 import { portalAuthMessages, singleQuery } from '../../utils/authError'
+import { requestPayload, type RoomDraft } from '../../utils/portalStay'
 import { bookingStatusKey, bookingStatusTone } from '../../utils/portalStatus'
 
-type Category = PortalRequestInput['category']
-
-type CabinDraft = {
-  adults: number
-  children: number
+type StayRange = {
+  check_in: string
+  check_out: string
 }
 
 const { t } = useI18n()
 const route = useRoute()
 const { request } = useApi()
 
-const queryId = Number(singleQuery(route.query.departure_id))
-const departureId = ref(Number.isInteger(queryId) && queryId > 0 ? String(queryId) : '')
-const category = ref<Category>('SUITE')
-const categoryItems = computed(() => [
-  { label: t('requests.suite'), value: 'SUITE' as const },
-  { label: t('requests.owner'), value: 'OWNER' as const }
-])
-const cabins = ref<Array<CabinDraft>>([{ adults: 1, children: 0 }])
+const rates = ref<PortalStayRates | null>(null)
+const stay = ref<StayRange | null>(null)
+const rooms = ref<Array<RoomDraft>>([{
+  roomType: '',
+  adults: 2,
+  childAges: [],
+  ratePlan: ''
+}])
 const clientName = ref('')
 const clientEmail = ref('')
 const notes = ref('')
@@ -30,24 +29,87 @@ const submitting = ref(false)
 const errors = ref<Array<string>>([])
 const created = ref<PortalRequestCreated | null>(null)
 
-function addCabin(): void {
-  cabins.value.push({ adults: 1, children: 0 })
-}
+const limits = computed(() => rates.value?.stay ?? null)
+const typeItems = computed(() => (rates.value?.room_types ?? []).map(type => ({
+  label: type.name,
+  value: type.code
+})))
+const planItems = computed(() => (rates.value?.rate_plans ?? []).map(plan => ({
+  label: plan.name,
+  value: plan.code
+})))
 
-function removeCabin(index: number): void {
-  if (cabins.value.length < 2) {
+function addRoom(): void {
+  const max = limits.value?.max_rooms ?? rooms.value.length
+
+  if (rooms.value.length >= max) {
     return
   }
 
-  cabins.value.splice(index, 1)
+  const first = rooms.value[0]
+  rooms.value.push({
+    roomType: first?.roomType ?? '',
+    adults: first?.adults ?? 2,
+    childAges: [],
+    ratePlan: first?.ratePlan ?? ''
+  })
 }
 
-function partyCount(value: number, minimum: number): number {
-  if (!Number.isFinite(value)) {
-    return minimum
+function removeRoom(index: number): void {
+  if (rooms.value.length < 2) {
+    return
   }
 
-  return value
+  rooms.value.splice(index, 1)
+}
+
+function applyQuery(): void {
+  const checkIn = singleQuery(route.query.check_in)
+  const checkOut = singleQuery(route.query.check_out)
+  const roomType = singleQuery(route.query.room_type)
+  const ratePlan = singleQuery(route.query.rate_plan)
+  const adults = Number(singleQuery(route.query.adults))
+  const first = rooms.value[0]
+
+  if (!first) {
+    return
+  }
+
+  if (/^\d{4}-\d{2}-\d{2}$/.test(checkIn) && /^\d{4}-\d{2}-\d{2}$/.test(checkOut)) {
+    stay.value = { check_in: checkIn, check_out: checkOut }
+  }
+
+  if (roomType !== '') {
+    first.roomType = roomType
+  }
+
+  if (ratePlan !== '') {
+    first.ratePlan = ratePlan
+  }
+
+  if (Number.isInteger(adults) && adults > 0) {
+    first.adults = adults
+  }
+}
+
+async function loadRates(): Promise<void> {
+  try {
+    rates.value = await request('/api/portal/rates') as PortalStayRates
+    const fallback = rates.value.rate_plans.find(plan => plan.default)?.code ?? rates.value.rate_plans[0]?.code ?? ''
+    const type = rates.value.room_types[0]?.code ?? ''
+
+    for (const room of rooms.value) {
+      if (room.roomType === '') {
+        room.roomType = type
+      }
+
+      if (room.ratePlan === '') {
+        room.ratePlan = fallback
+      }
+    }
+  } catch (caught: unknown) {
+    errors.value = portalAuthMessages(caught)
+  }
 }
 
 async function onSubmit(): Promise<void> {
@@ -63,30 +125,14 @@ async function onSubmit(): Promise<void> {
     return
   }
 
-  const departure = Number(departureId.value)
-
-  if (!Number.isInteger(departure) || departure < 1) {
-    errors.value = [t('requests.departureRequired')]
+  if (!stay.value) {
+    errors.value = [t('requests.stayRequired')]
     return
   }
 
-  const payload: PortalRequestInput = {
-    departure_id: departure,
-    category: category.value,
-    cabins: cabins.value.map(row => ({
-      adults: partyCount(row.adults, 0),
-      children: partyCount(row.children, 0)
-    })),
-    client: {
-      name: clientName.value.trim(),
-      email: clientEmail.value.trim()
-    },
-    client_of_record: true
-  }
-  const note = notes.value.trim()
-
-  if (note !== '') {
-    payload.notes = note
+  if (rooms.value.some(room => room.roomType === '')) {
+    errors.value = [t('requests.roomRequired')]
+    return
   }
 
   submitting.value = true
@@ -94,7 +140,14 @@ async function onSubmit(): Promise<void> {
   try {
     created.value = await request('/api/portal/requests', {
       method: 'POST',
-      body: payload
+      body: requestPayload(
+        stay.value.check_in,
+        stay.value.check_out,
+        rooms.value,
+        clientName.value,
+        clientEmail.value,
+        notes.value
+      )
     }) as PortalRequestCreated
   } catch (caught: unknown) {
     errors.value = portalAuthMessages(caught)
@@ -102,6 +155,9 @@ async function onSubmit(): Promise<void> {
     submitting.value = false
   }
 }
+
+applyQuery()
+void loadRates()
 </script>
 
 <template>
@@ -151,67 +207,59 @@ async function onSubmit(): Promise<void> {
         </p>
       </div>
 
-      <div class="field">
-        <label for="req-departure">{{ t('requests.departure') }}</label>
-        <input
-          id="req-departure"
-          v-model="departureId"
-          type="number"
-          min="1"
-          step="1"
-          required
-        >
-      </div>
-
-      <div class="field">
-        <label for="req-category">{{ t('requests.category') }}</label>
-        <USelect
-          id="req-category"
-          v-model="category"
-          class="w-full"
-          :items="categoryItems"
-        />
-      </div>
+      <AnkStayInput
+        v-if="limits"
+        v-model="stay"
+        :min-nights="limits.min_nights"
+        :max-nights="limits.max_nights"
+      />
 
       <div>
         <p class="prevl">
-          {{ t('requests.cabins') }}
+          {{ t('requests.rooms') }}
         </p>
         <div class="portal-cabins">
           <div
-            v-for="(cabin, index) in cabins"
+            v-for="(room, index) in rooms"
             :key="index"
             class="portal-cabin"
           >
             <div class="field">
+              <label :for="`req-type-${String(index)}`">{{ t('requests.roomType') }}</label>
+              <USelect
+                :id="`req-type-${String(index)}`"
+                v-model="room.roomType"
+                class="w-full"
+                :items="typeItems"
+              />
+            </div>
+            <div class="field">
+              <label :for="`req-plan-${String(index)}`">{{ t('requests.plan') }}</label>
+              <USelect
+                :id="`req-plan-${String(index)}`"
+                v-model="room.ratePlan"
+                class="w-full"
+                :items="planItems"
+              />
+            </div>
+            <div class="field">
               <label :for="`req-adults-${String(index)}`">{{ t('requests.adults') }}</label>
               <input
                 :id="`req-adults-${String(index)}`"
-                v-model.number="cabin.adults"
+                v-model.number="room.adults"
                 type="number"
                 min="1"
                 step="1"
                 required
               >
             </div>
-            <div class="field">
-              <label :for="`req-children-${String(index)}`">{{ t('requests.children') }}</label>
-              <input
-                :id="`req-children-${String(index)}`"
-                v-model.number="cabin.children"
-                type="number"
-                min="0"
-                step="1"
-                required
-              >
-            </div>
             <button
-              v-if="cabins.length > 1"
+              v-if="rooms.length > 1"
               type="button"
               class="mini"
-              @click="removeCabin(index)"
+              @click="removeRoom(index)"
             >
-              {{ t('requests.removeCabin') }}
+              {{ t('requests.removeRoom') }}
             </button>
           </div>
         </div>
@@ -219,9 +267,9 @@ async function onSubmit(): Promise<void> {
           <button
             type="button"
             class="mini"
-            @click="addCabin"
+            @click="addRoom"
           >
-            {{ t('requests.addCabin') }}
+            {{ t('requests.addRoom') }}
           </button>
         </p>
       </div>

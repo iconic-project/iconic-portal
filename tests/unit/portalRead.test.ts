@@ -1,65 +1,66 @@
+import type { PortalStayRates } from '../../app/types/api'
 import { describe, expect, it } from 'vitest'
 import { ApiError } from '#iconic-ui/app/composables/useApi'
-import { canRequestDeparture } from '../../app/utils/availabilityLabel'
-import { availabilityPath, monthToRange } from '../../app/utils/availabilityQuery'
 import { portalPageMessages } from '../../app/utils/authError'
 import { filenameFromDisposition } from '../../app/utils/downloadFile'
 import { formatSize } from '../../app/utils/formatSize'
+import { availabilityPath, calendarPath, canRequestRoom, nightlyFor, requestPath, requestPayload, shiftMonth } from '../../app/utils/portalStay'
 
-describe('monthToRange', () => {
-  it('turns a month range into the first and last calendar days', () => {
-    expect(monthToRange('2026-01', '2026-02')).toEqual({
-      from: '2026-01-01',
-      to: '2026-02-28'
-    })
-    expect(monthToRange('2024-02', '')).toEqual({
-      from: '2024-02-01',
-      to: undefined
-    })
-    expect(monthToRange('', '2024-02')).toEqual({
-      from: undefined,
-      to: '2024-02-29'
-    })
+const rates: PortalStayRates = {
+  commission_pct: 10,
+  currency: 'USD',
+  stay: { min_nights: 1, max_nights: 30, max_rooms: 4 },
+  seasons: [{ code: 'LOW', name: 'Low', from: '2026-01-01', to: '2026-03-31' }],
+  room_types: [{ code: 'FAM', name: 'Family' }],
+  room_rates: [{ room_type: 'FAM', season: 'LOW', nightly: 144 }],
+  rate_plans: [],
+  length_of_stay: [],
+  supplements: []
+}
+
+describe('stay search paths', () => {
+  it('asks the stay search and the month grid', () => {
+    expect(availabilityPath('2026-12-21', '2026-12-25', 2)).toBe(
+      '/api/portal/availability?check_in=2026-12-21&check_out=2026-12-25&adults=2&rooms=1'
+    )
+    expect(calendarPath('2026-12', 2)).toBe('/api/portal/calendar?from=2026-12&months=1&adults=2&children=0')
+    expect(shiftMonth('2026-12', 1)).toBe('2027-01')
   })
 
-  it('omits a month that is not YYYY-MM', () => {
-    expect(monthToRange('September', '2026-13')).toEqual({
-      from: undefined,
-      to: undefined
-    })
-  })
-})
-
-describe('availabilityPath', () => {
-  it('sends the API filters and omits an empty page', () => {
-    expect(availabilityPath({
-      fromMonth: '2026-09',
-      toMonth: '2026-10',
-      yacht: ' ANAMARA ',
-      itinerary: 'WEST',
-      page: 1
-    })).toBe('/api/portal/availability?from=2026-09-01&to=2026-10-31&yacht=ANAMARA&itinerary=WEST')
+  it('offers a request only for a bookable room with a price', () => {
+    expect(canRequestRoom(true, 1)).toBe(true)
+    expect(canRequestRoom(false, 0)).toBe(false)
+    expect(canRequestRoom(true, 0)).toBe(false)
+    expect(requestPath('2026-12-21', '2026-12-25', 'FAM', 2, 'BAR')).toBe(
+      '/requests/new?check_in=2026-12-21&check_out=2026-12-25&room_type=FAM&adults=2&rate_plan=BAR'
+    )
   })
 
-  it('adds the page the API paginator reads', () => {
-    expect(availabilityPath({
-      fromMonth: '',
-      toMonth: '',
-      yacht: '',
-      itinerary: '',
-      page: 2
-    })).toBe('/api/portal/availability?page=2')
+  it('reads the net nightly for a season', () => {
+    expect(nightlyFor(rates, 'FAM', 'LOW')).toBe(144)
+    expect(nightlyFor(rates, 'FAM', 'HIGH')).toBeNull()
   })
 })
 
-describe('canRequestDeparture', () => {
-  it('offers a request only for a week the portal can ask for', () => {
-    expect(canRequestDeparture('AVAILABLE')).toBe(true)
-    expect(canRequestDeparture('LIMITED')).toBe(true)
-    expect(canRequestDeparture('ONLY_N_LEFT')).toBe(true)
-    expect(canRequestDeparture('FULL')).toBe(false)
-    expect(canRequestDeparture('CLOSED')).toBe(false)
-    expect(canRequestDeparture('CHARTER')).toBe(false)
+describe('requestPayload', () => {
+  it('posts the stay, the rooms and the client, and omits an empty note', () => {
+    expect(requestPayload('2026-12-21', '2026-12-25', [{
+      roomType: 'FAM',
+      adults: 2,
+      childAges: [],
+      ratePlan: 'BAR'
+    }], ' Elena Voss ', 'elena@guest.test', '  ')).toEqual({
+      check_in: '2026-12-21',
+      check_out: '2026-12-25',
+      rooms: [{
+        room_type: 'FAM',
+        adults: 2,
+        child_ages: [],
+        rate_plan: 'BAR'
+      }],
+      client: { name: 'Elena Voss', email: 'elena@guest.test' },
+      client_of_record: true
+    })
   })
 })
 
