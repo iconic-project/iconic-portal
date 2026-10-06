@@ -218,11 +218,11 @@ void loadRates()
         <p class="prevl">
           {{ t('requests.rooms') }}
         </p>
-        <div class="portal-cabins">
+        <div class="portal-rooms">
           <div
             v-for="(room, index) in rooms"
             :key="index"
-            class="portal-cabin"
+            class="portal-room"
           >
             <div class="field">
               <label :for="`req-type-${String(index)}`">{{ t('requests.roomType') }}</label>

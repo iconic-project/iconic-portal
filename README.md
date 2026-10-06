@@ -1,6 +1,6 @@
 # iconic-portal
 
-The agent portal for Iconic. Nuxt 4, **SPA** (`ssr: false`), on port **3002**. Travel advisors at an approved agency sign in here to see their net rates, availability, bookings, commissions and sales materials. It extends the `iconic-ui` layer and uses the API's agency session cookie. It does not track visits.
+The agent portal for the Iconic hotel. Nuxt 4, **SPA** (`ssr: false`), on port **3002**. Travel advisors at an approved agency sign in here to see net rates, room availability, stay bookings, commissions and sales materials. It extends the `iconic-ui` layer and uses the API's agency session cookie. It does not track visits.
 
 | | |
 |---|---|

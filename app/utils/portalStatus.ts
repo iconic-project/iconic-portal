@@ -6,8 +6,8 @@ export function bookingStatusTone(status: PortalBooking['status']): PillTone {
   switch (status) {
     case 'CONFIRMED':
     case 'FULLY_PAID':
-    case 'COMPLETED':
-    case 'ON_BOARD':
+    case 'IN_HOUSE':
+    case 'CHECKED_OUT':
       return 'ok'
     case 'ON_HOLD_AGENCY':
     case 'PENDING_PAYMENT':
@@ -17,6 +17,7 @@ export function bookingStatusTone(status: PortalBooking['status']): PillTone {
     case 'CANCELLED':
     case 'CANCELLED_POSTPAID':
     case 'RELEASED':
+    case 'NO_SHOW':
       return 'coral'
     case 'REQUESTED':
       return 'sand'

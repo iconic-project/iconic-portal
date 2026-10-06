@@ -88,9 +88,9 @@ describe('portalPageMessages', () => {
 
   it('prefers the 422 field sentences', () => {
     const error = new ApiError(422, 'The given data was invalid.', {
-      yacht: ['The selected yacht is invalid.']
+      property: ['The selected property is invalid.']
     })
 
-    expect(portalPageMessages(error)).toEqual(['The selected yacht is invalid.'])
+    expect(portalPageMessages(error)).toEqual(['The selected property is invalid.'])
   })
 })

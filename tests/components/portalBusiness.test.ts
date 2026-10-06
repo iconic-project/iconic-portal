@@ -302,7 +302,7 @@ describe('requests page', () => {
       reference: 'REQ-2026-0004',
       status: 'REQUESTED',
       lead_guest: 'Elena Voss',
-      next: 'This request does not hold a cabin. The team will answer within 16 hours.',
+      next: 'This request does not hold a room. The team will answer within 16 hours.',
       payment_state: 'Awaiting deposit',
       open_payment_kinds: []
     }
@@ -322,7 +322,7 @@ describe('requests page', () => {
       reference: 'REQ-2026-0004',
       status: 'REQUESTED',
       lead_guest: 'Elena Voss',
-      next: 'This request does not hold a cabin. The team will answer within 16 hours.',
+      next: 'This request does not hold a room. The team will answer within 16 hours.',
       payment_state: 'Awaiting deposit',
       open_payment_kinds: []
     }

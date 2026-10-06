@@ -309,13 +309,13 @@ tr.dr-empty td {
   max-width: 640px;
 }
 
-.portal-cabins {
+.portal-rooms {
   display: flex;
   flex-direction: column;
   gap: 10px;
 }
 
-.portal-cabin {
+.portal-room {
   display: grid;
   grid-template-columns: 1fr 1fr auto;
   gap: 10px;
