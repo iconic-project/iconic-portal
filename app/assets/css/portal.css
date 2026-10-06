@@ -134,7 +134,7 @@
   max-width: 100%;
   background: var(--bg-surface);
   border: 1px solid var(--border-subtle);
-  border-radius: 16px;
+  border-radius: var(--ui-radius);
   box-shadow: var(--shadow-sm);
   padding: 32px 28px;
 }
