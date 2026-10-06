@@ -19,6 +19,12 @@
   },
   "auth": {
     "signIn": "Sign in",
+    "deskEyebrow": "Agent portal",
+    "deskHeadline": "The house book is open.",
+    "deskBody": "Net rates, rooms, and the bookings you hold.",
+    "deskKey": "Agency key",
+    "deskRates": "Rates",
+    "deskBookings": "Bookings",
     "email": "Email",
     "password": "Password",
     "passwordConfirm": "Confirm password",

@@ -28,6 +28,14 @@ export default defineNuxtConfig({
 
   ssr: false,
 
+  app: {
+    head: {
+      htmlAttrs: {
+        'data-theme': 'staff'
+      }
+    }
+  },
+
   css: ['~/assets/css/portal.css'],
 
   runtimeConfig: {
